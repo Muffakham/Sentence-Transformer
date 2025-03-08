@@ -1,4 +1,3 @@
-
 #Task 1
 #Sentence transformer architecture
 #the base model is bert-base-uncased (Encoder)
@@ -76,4 +75,3 @@ class SentenceTransformer(torch.nn.Module):
         tokenized_input = self.tokenizer(text, padding=True, truncation=True, return_tensors='pt').to(self.device)
         sentence_embeddings = self.forward(tokenized_input['input_ids'], tokenized_input['attention_mask'])
         return sentence_embeddings
-
