@@ -11,12 +11,14 @@ from datasets import load_dataset
 from torch.utils.data import DataLoader, TensorDataset
 import numpy as np
 from tqdm import tqdm
+from seqeval.metrics import classification_report
 
 class SentenceTransformerTrainer():
   def __init__(self,
                model,
                dataset,
                tag_set,
+               freeze_entire_network: bool = False,
                freeze_transformer: bool = False,
                freeze_classifier: bool = False,
                freeze_ner: bool = False):
@@ -25,6 +27,7 @@ class SentenceTransformerTrainer():
     self.model = model
     self.dataset = dataset 
     self.label_map = {label: i for i, label in enumerate(tag_set)}
+    self.reverse_label_map = {i: label for label, i in self.label_map.items()}
 
     #freezing layers
     if freeze_transformer:
@@ -35,6 +38,9 @@ class SentenceTransformerTrainer():
         param.requires_grad = False
     if freeze_ner:
       for param in self.model.ner_head.parameters():
+        param.requires_grad = False
+    if freeze_entire_network:
+      for param in self.model.parameters():
         param.requires_grad = False
 
     self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -129,15 +135,12 @@ class SentenceTransformerTrainer():
             optimizer.zero_grad()
 
             classifier_logits, ner_logits = self.model(input_ids, attention_mask)
-            
-
 
             classifier_loss = classifier_loss_function(classifier_logits, labels)
             
             ner_loss = ner_loss_function(ner_logits.view(-1, ner_logits.shape[-1]), ner_labels.view(-1))
             
-
-            #cumalative loss in case NER labels are present
+            #cumalative loss
             loss = classifier_loss + ner_loss
 
             loss.backward()
@@ -149,6 +152,14 @@ class SentenceTransformerTrainer():
     self.model.eval()
     total_correct = 0
     total_samples = 0
+    gold_labels = {
+        "classifier": [],
+        "ner": []
+    }
+    predicted_labels = {
+        "classifier": [],
+        "ner": []
+    }
     with torch.no_grad():
       total_correct = {
           "classifier": 0,
@@ -166,14 +177,23 @@ class SentenceTransformerTrainer():
         classifier_label_pred, ner_label_pred = self.model.predict(input_ids, attention_mask)
 
         
-        
         total_correct["classifier"] += (classifier_label_pred == labels).sum().item()
         total_samples["classifier"] += labels.size(0)
         total_correct["ner"] += (ner_label_pred == ner_labels).sum().item()
-        total_samples["ner"] += ner_labels.size(0)
+        total_samples["ner"] += ner_labels.size(0) * ner_labels.size(1)
+        
+        batch_size = ner_labels.shape[0]
+        seq_len = ner_labels.shape[1]
+        for i in range(batch_size):
+          gold_labels["ner"].append([self.reverse_label_map.get(idx.item(), 'O') for idx in ner_labels[i]])
+          predicted_labels["ner"].append([self.reverse_label_map.get(idx.item(), 'O') for idx in ner_label_pred[i]])
         
     accuracy = {
-        "classifier": total_correct["classifier"] / total_samples["classifier"],
-        "ner": total_correct["ner"] / total_samples["ner"]
+        "classifier": (total_correct["classifier"] / total_samples["classifier"]) * 100,
+        "ner": (total_correct["ner"] / total_samples["ner"]) * 100
     }
+    print(f"total_correct: {total_correct}")
+    print(f"total_samples: {total_samples}")
     print(f"Test Accuracy: {accuracy}")
+    print(f"Classification Report for NER: \n{classification_report(gold_labels['ner'], predicted_labels['ner'])}")
+    
