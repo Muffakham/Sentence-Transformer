@@ -16,6 +16,12 @@ The project is organized as follows:
 *   **`main.py`**: This is the main script to run the project. It imports necessary modules, creates the dataset, initializes the multi-task sentence transformer model, sets up the trainer, and starts the training process.
 *   **`requirements.txt`**: This file lists the project dependencies, including torch, transformers, datasets, numpy, and spacy. These dependencies need to be installed to run the project.
 
+## Frozen paramters training
+
+* **`freezing entire network`**: if the entire network is frozen, no training will happen.
+* **`freezing transformer network`**: if the transformer block is frozen, then only the heads will be trained. In this case, the pre-trained knowledge is retained. The transformer block does not learn anyhting. It might be suitable for training task specific heads with in the same domain. if the domain is different, then it is important for the transformer block to be unfrozen, in order to understand domain specific vocab.
+* **`freezing task specific head`**: in this case either of the task specific head can be frozen. Therefore only one task will be learnt. Allows for improving task specific performance. In this example, the classification task performs better than the NER task. In order to improve NER, classifier can be frozen and the NER traineed. If there is more data for a specific task, it is benefecial to freeze the other task head. 
+
 ## Requirements
 
 To run this project, you need to have the following libraries installed:
