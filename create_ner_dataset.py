@@ -60,30 +60,3 @@ def create_dataset():
   test_dataset = process_dataset(test_dataset)
   dataset = DatasetDict({"train": train_dataset, "test": test_dataset})
   return dataset, TAGS_SET
-
-def process_dataset(dataset):
-    processed_dataset = dataset.map(
-        lambda example: {"ner_tags": get_ner_tags(example["text"])},
-        batched=False
-    )
-    processed_dataset = processed_dataset.map(
-        lambda example: {"words": [token[0] for token in example["ner_tags"]]},
-        batched=False
-    )
-    processed_dataset = processed_dataset.map(
-        lambda example: {"ner_tags": [token[1] for token in example["ner_tags"]]},
-        batched=False
-    )
-    return processed_dataset
-
-def create_dataset():
-  dataset = load_dataset("ag_news")
-
-  train_dataset = dataset["train"].select(range(1000))
-  test_dataset = dataset["test"].select(range(200))
-  dataset = DatasetDict({"train": train_dataset, "test": test_dataset})
-
-  train_dataset = process_dataset(train_dataset)
-  test_dataset = process_dataset(test_dataset)
-  dataset = DatasetDict({"train": train_dataset, "test": test_dataset})
-  return dataset
