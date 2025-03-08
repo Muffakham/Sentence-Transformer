@@ -37,14 +37,14 @@ class MultiTaskSentenceTransformer(torch.nn.Module):
         self.ner_head = torch.nn.Linear(hidden_dim, num_ner_labels).to(self.device)
 
     def mean_pooling(self, model_output, attention_mask):
-       
+
         token_embeddings = model_output.last_hidden_state
         input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
         sentence_embeddings = torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
         return sentence_embeddings
 
     def non_mean_pooling(self, model_output, attention_mask):
-        
+
         token_embeddings = model_output.last_hidden_state
         sentence_embeddings = token_embeddings[:, 0] #[CLS] token
         return sentence_embeddings
@@ -54,14 +54,13 @@ class MultiTaskSentenceTransformer(torch.nn.Module):
         output = self.model(input_ids, attention_mask)
         sentence_vector = self.mean_pooling(output, attention_mask) if self.non_mean_pooling else self.non_mean_pooling(output, attention_mask)
         token_vectors = output.last_hidden_state
-        
+
         classifier_logits = self.classifier_head(sentence_vector)
         ner_logits = self.ner_head(token_vectors)
-        
+
         return classifier_logits, ner_logits
 
     def predict(self, input_ids, attention_mask):
         with torch.no_grad():
           classifier_logits, ner_logits = self.forward(input_ids, attention_mask)
           return torch.argmax(classifier_logits, dim=-1), torch.argmax(ner_logits, dim=-1)
-
