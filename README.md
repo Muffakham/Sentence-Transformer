@@ -1,5 +1,37 @@
 # Sentence-Transformer
 
+## Codebase Overview
+
+This project implements a multi-task sentence transformer using the Hugging Face Transformers library. The model is designed to perform both **text classification** and **Named Entity Recognition (NER)**, leveraging a shared BERT-based encoder.
+
+### Key Components
+
+- **sentenceTransformer.py**: Implements a basic sentence transformer using BERT. Provides pooling methods for sentence embeddings and can display token embeddings.
+- **multi_task_sentence_transformer.py**: Extends the basic model for multi-task learning, adding two heads: one for text classification and one for NER (BIO tagging).
+- **trainer_sentence_transformer.py**: Contains a trainer class for data preprocessing, tokenization, training, evaluation, and supports freezing parts of the model.
+- **create_ner_dataset.py**: Prepares the dataset by adding NER tags to AG News using spaCy and aligns NER tags with tokens.
+- **train.py**: The main script to run the project, handling dataset creation, model initialization, training, and evaluation.
+- **requirements.txt**: Lists dependencies: torch, transformers, spacy, datasets, seqeval.
+- **sentence_transformer.ipynb**: (Optional) Jupyter notebook for experimentation or step-by-step development.
+
+### Workflow
+
+1. **Dataset Creation**: `create_ner_dataset.py` processes AG News, adds NER tags, and prepares the data.
+2. **Model Initialization**: `multi_task_sentence_transformer.py` defines a model with shared BERT encoder and two task-specific heads.
+3. **Training**: `trainer_sentence_transformer.py` handles batching, loss calculation, freezing options, and optimization.
+4. **Execution**: `train.py` ties everything together for end-to-end training and evaluation.
+
+### Freezing Parameters
+- The trainer supports freezing:
+  - The entire network (no training).
+  - Only the transformer (train only heads).
+  - Only one of the heads (focus on a specific task).
+
+### Dependencies
+- Hugging Face Transformers, PyTorch, spaCy, Datasets, Seqeval.
+
+### Entry Point
+- Run `train.py` to execute the full pipeline: dataset creation, model training, and evaluation.
 
 ## Multi-task Sentence Transformer
 
